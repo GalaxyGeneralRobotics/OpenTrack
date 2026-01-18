@@ -1,11 +1,5 @@
 import os
 
-xla_flags = os.environ.get("XLA_FLAGS", "")
-xla_flags += " --xla_gpu_triton_gemm_any=True"
-os.environ["XLA_FLAGS"] = xla_flags
-os.environ["XLA_PYTHON_CLIENT_PREALLOCATE"] = "false"
-os.environ["MUJOCO_GL"] = "egl"
-
 import logging as python_logging
 LOGGER = python_logging.getLogger()
 LOGGER.setLevel(python_logging.INFO)

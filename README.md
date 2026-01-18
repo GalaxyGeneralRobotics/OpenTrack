@@ -39,12 +39,20 @@ This repository is the official implementation of OpenTrack, an open-source huma
 
 2. Create a virtual environment and install dependencies:
    ```shell
-   conda create -n any2track python=3.12
-   conda activate any2track
-   # Install torch to convert JAX to Torch. We don't require the GPU version of torch, but you can install any version as you like.
-   pip install torch==2.5.1 torchvision==0.20.1 torchaudio==2.5.1 --index-url https://download.pytorch.org/whl/cpu
-   pip install -r requirements.txt
-   export MJX_SKIP_MENAGERIE_CLONE=1 
+   uv sync -i https://pypi.org/simple 
+   ```
+
+3. Create a `.env` file in the project directory with the following content:
+   ```dotenv
+   export GLI_PATH=<your_root_path>/OpenTrack
+   export WANDB_PROJECT=<your_project_name>
+   export WANDB_ENTITY=<your_entity_name>
+   export WANDB_API_KEY=<your_wandb_api_key>
+   ```
+
+4. Initialize the MuJoCo environment:
+   ```shell
+   source .venv/bin/activate; source .env;
    ```
 
 5. Download the [mocap data](https://huggingface.co/datasets/robfiras/loco-mujoco-datasets/tree/main/Lafan1/mocap/UnitreeG1) and put them under `data/mocap/`. Thanks for the retargeting motions of LAFAN1 dataset from [LocoMuJoCo](https://github.com/robfiras/loco-mujoco/)!
@@ -62,9 +70,9 @@ This repository is the official implementation of OpenTrack, an open-source huma
                |--- ...
    ```
 
-## Usage
+# Usage
 
-### Play pretrained checkpoints
+## Play pretrained checkpoints
 1. Download pretrained checkpoints and configs from [checkpoints and configs](https://drive.google.com/drive/folders/1wDL4Chr6sGQiCx1tbvhf9DowN73cP_PF?usp=drive_link), and put them under `experiments/`. Visualization results: [videos](https://drive.google.com/drive/folders/1yFAG2UIZq5-504MkKTwevquwRO1OsGOL?usp=sharing).
 
 2. Run the evaluation script:
@@ -73,8 +81,8 @@ This repository is the official implementation of OpenTrack, an open-source huma
    python play_policy.py --exp_name <your_exp_name> [--use_viewer] [--use_renderer] [---play_ref_motion]
    ```
 As of **November 30, 2025**, we have open-sourced **a generalist model on LAFAN1**, daggered from four teachers. This checkpoint was trained with simple domain randomization (DR). You may try deploying it on a Unitree G1 robot using your own deployment code, since we have not yet open-sourced our real-robot deployment pipeline.
-### Train from scratch
-1. Train the model
+## Train from scratch
+1. Train the model:
    ```shell
    # Train on a flat terrain:
    python train_policy.py --exp_name flat_terrain --terrain_type flat_terrain
@@ -100,7 +108,7 @@ As of **November 30, 2025**, we have open-sourced **a generalist model on LAFAN1
    python play_policy.py --exp_name <your_exp_name> [--use_viewer] [--use_renderer] [---play_ref_motion]
    ```
    
-## Acknowledgement
+# Acknowledgement
 
 This repository is build upon `jax`, `brax`, `loco-mujoco`, and `mujoco_playground`.
 
