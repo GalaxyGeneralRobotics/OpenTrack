@@ -343,3 +343,23 @@ LAFAN1_DATASETS = [
     'walk3_subject5',
     'walk4_subject1',
 ]
+
+LAFAN1_SPECIALIST_DATASETS_1 = [
+    'dance1_subject1',
+    'dance1_subject2',
+    'dance1_subject3',
+    'dance2_subject1',
+    'dance2_subject2',
+    'dance2_subject3',
+    'dance2_subject4',
+    'dance2_subject5',
+]
+
+LAFAN1_SPECIALIST_DATASETS_2 = [
+    'fallAndGetUp1_subject1',
+    'fallAndGetUp1_subject4',
+    'fallAndGetUp1_subject5',
+    'fallAndGetUp2_subject2',
+    'fallAndGetUp2_subject3',
+    'fallAndGetUp3_subject1',
+]

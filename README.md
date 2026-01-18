@@ -50,12 +50,7 @@ This repository is the official implementation of OpenTrack, an open-source huma
    export WANDB_API_KEY=<your_wandb_api_key>
    ```
 
-4. Initialize the MuJoCo environment:
-   ```shell
-   source .venv/bin/activate; source .env;
-   ```
-
-5. Download the [mocap data](https://huggingface.co/datasets/robfiras/loco-mujoco-datasets/tree/main/Lafan1/mocap/UnitreeG1) and put them under `data/mocap/`. Thanks for the retargeting motions of LAFAN1 dataset from [LocoMuJoCo](https://github.com/robfiras/loco-mujoco/)!
+4. Download the [mocap data](https://huggingface.co/datasets/robfiras/loco-mujoco-datasets/tree/main/Lafan1/mocap/UnitreeG1) and put them under `data/mocap/`. Thanks for the retargeting motions of LAFAN1 dataset from [LocoMuJoCo](https://github.com/robfiras/loco-mujoco/)!
 
    The file structure should be like:
 
@@ -71,6 +66,13 @@ This repository is the official implementation of OpenTrack, an open-source huma
    ```
 
 # Usage
+
+## Initialize environment
+
+1. Initialize the MuJoCo environment:
+   ```shell
+   source .venv/bin/activate; source .env;
+   ```
 
 ## Play pretrained checkpoints
 1. Download pretrained checkpoints and configs from [checkpoints and configs](https://drive.google.com/drive/folders/1wDL4Chr6sGQiCx1tbvhf9DowN73cP_PF?usp=drive_link), and put them under `experiments/`. Visualization results: [videos](https://drive.google.com/drive/folders/1yFAG2UIZq5-504MkKTwevquwRO1OsGOL?usp=sharing).

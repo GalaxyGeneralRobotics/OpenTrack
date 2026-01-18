@@ -1066,11 +1066,11 @@ class TrajectoryData(SingleData):
                 dic[key] = jnp.array(value)
         return TrajectoryData(**dic)
 
-    def to_jax_fp16(self):
+    def to_jax_fp32(self):
         dic = flax.serialization.to_state_dict(self)
         for key, value in dic.items():
             if key != "split_points":
-                dic[key] = jnp.array(value, dtype=jnp.float16)
+                dic[key] = jnp.array(value, dtype=jnp.float32)
             else:
                 dic[key] = jnp.array(value)
         return TrajectoryData(**dic)

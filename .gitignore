@@ -182,3 +182,4 @@ cython_debug/
 #.idea/
 /swanlog/
 /data/mocap/
+/test.sh

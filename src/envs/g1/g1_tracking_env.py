@@ -583,6 +583,7 @@ class G1TrackingEnv(g1_base.G1Env):
 
         # load trajectory again to ensure the latest transformed trajectories is loaded
         trajectory.info.model = trajectory.info.model.to_jax()
+        trajectory.data = trajectory.data.to_jax_fp32()
         self.th = self.load_trajectory(trajectory, warn=False)
 
         return trajectory.data
