@@ -91,7 +91,6 @@ def _progress(num_steps, metrics, times, total_steps, debug_mode):
 def get_trajectory_handler(env):
     # load reference trajectory
     trajectory_data = env.prepare_trajectory(env._config.reference_traj_config.name)
-    env.th.traj = None
 
     # output the dataset and observation info of general tracker
     print("=" * 50)

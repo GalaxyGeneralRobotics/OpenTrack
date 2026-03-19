@@ -53,7 +53,6 @@ def play(args: Args):
     config_path = Path(__file__).parent / "experiments" / args.exp_name / "checkpoints" / "config.json"
     with open(config_path, "r") as f:
         config = json.load(f)
-    del config["env_config"]["reference_traj_config"]
     env_cfg.update(config["env_config"])
 
     # env_cfg.reference_traj_config.name = {"lafan1": ["dance1_subject2"]}
@@ -75,7 +74,7 @@ def play(args: Args):
     policy_jit = torch.jit.load(policy_path, map_location="cpu")
     state = env.reset()
 
-    len_traj = env.th.traj.data.qpos.shape[0] - len(env_cfg.reference_traj_config.name) - 1
+    len_traj = env.th.traj.data.qpos.shape[0] - env.th.n_trajectories - 1
     for i in tqdm(range(len_traj)):
         with torch.no_grad():
             action = policy_jit(torch.from_numpy(state.obs["state"].reshape(1, -1).astype(np.float32))).cpu().numpy()
