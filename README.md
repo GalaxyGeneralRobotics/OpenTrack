@@ -97,6 +97,8 @@ As of **November 30, 2025**, we have open-sourced **a generalist model on LAFAN1
    python -m track_mj.learning.train.train_ppo_track --task G1TrackingGeneralDR --exp_name <your_exp_name>
   ```
 
+If you want to modify the training configuration, you should edit the config file associated with the corresponding environment. For example, for the command above, you should modify the `g1_tracking_general_dr_task_config` in the `OpenTrack/track_mj/envs/g1_tracking/train/g1_env_tracking_general_dr.py`.
+
 ## Evaluate the model
 
 1. Evaluate the specialist teachers:
