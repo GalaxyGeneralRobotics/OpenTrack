@@ -1,10 +1,15 @@
-# OpenTrack
-
-### GALBOT · Tsinghua
+<div align="center">
+  <h1 align="center"> OpenTrack </h1>
+  <h3 align="center"> GALBOT · Tsinghua </h3>
+<!--   <p align="center">
+    <a href="README.md"> English </a> | <a href="README_zh.md">中文</a>
+  </p>     -->
 
 :page_with_curl:[Paper](https://arxiv.org/abs/2509.13833) | :house:[Website](https://zzk273.github.io/Any2Track/)
 
+
 This repository is the official implementation of OpenTrack, an open-source humanoid motion tracking codebase that uses MuJoCo JAX for simulation and supports multi-GPU parallel training.
+</div>
 
 # News 🚩
 
@@ -16,13 +21,13 @@ This repository is the official implementation of OpenTrack, an open-source huma
 
 # TODOs
 
-- Release motion tracking codebase
-- Release simple domain randomization
-- Release pretrained LAFAN1 generalist v1 checkpoints
-- Release DAgger code
-- Release AnyAdapter
-- Release more pretrained checkpoints
-- Release real-world deployment code
+- [x] Release motion tracking codebase
+- [x] Release simple domain randomization
+- [x] Release pretrained LAFAN1 generalist v1 checkpoints
+- [ ] Release DAgger code
+- [ ] Release AnyAdapter
+- [ ] Release more pretrained checkpoints
+- [ ] Release real-world deployment code
 
 # Prepare
 
