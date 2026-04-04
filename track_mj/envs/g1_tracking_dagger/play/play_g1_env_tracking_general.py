@@ -334,8 +334,8 @@ class PlayG1TrackingGeneralEnv:
             "dif_joint_vel": dif_joint_vel * self._config.obs_scales_config.dif_joint_vel,
             "ref_feet_height": ref_feet_height,
             "ref_root_height": traj_data.qpos[2],
-            "ref_root_linvel_local": (traj_root_rot_mat.T @ traj_data.qvel[:3]) * self._config.obs_scales_config.joint_vel,
-            "ref_root_angvel_local": traj_data.qvel[3:6] * self._config.obs_scales_config.joint_vel,
+            "ref_root_linvel": (traj_root_rot_mat.T @ traj_data.qvel[:3]) * self._config.obs_scales_config.joint_vel,
+            "ref_root_angvel": traj_data.qvel[3:6] * self._config.obs_scales_config.joint_vel,
         }
 
         state = np.hstack([state_dict[k] for k in self._config.obs_keys])

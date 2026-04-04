@@ -47,7 +47,7 @@ def get_latest_ckpt(dir):
 
 def play(args: Args):
     env_class = tmj.registry.get(args.task, "tracking_dagger_play_env_class")
-    task_cfg = tmj.registry.get(args.task, "tracking_dagger_config")
+    task_cfg = tmj.registry.get(args.task, "tracking_config")
     env_cfg = task_cfg.env_config
 
     exp_dir = tmj.constant.WANDB_PATH_LOG / "dagger" / args.exp_name
