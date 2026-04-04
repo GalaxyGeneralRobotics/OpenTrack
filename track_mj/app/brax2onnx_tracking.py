@@ -11,41 +11,41 @@ os.environ["MUJOCO_GL"] = "egl"
 os.environ["XLA_PYTHON_CLIENT_PREALLOCATE"] = "false"
 os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 
-from mujoco_playground import wrapper
 from track_mj.eval.tracking.brax2onnx import get_latest_ckpt, convert_jax2onnx
+from track_mj.envs.g1_tracking.utils.wrapper import wrap_fn
 
 
 # --- CLI args ---
 @dataclass
 class Args:
     task: str
-    full_exp_name: str
+    exp_name: str
 
 
 # --- Main entry point ---
 def main(args: Args):
-    import track_mj as gmj
+    import track_mj as tmj
 
     # import brax.training.agents.ppo.train as ppo
     from track_mj.learning.policy.ppo import train_tracking as ppo
     from brax.training.agents.ppo.networks import make_ppo_networks
 
-    ckpt_path = gmj.get_path_log(args.full_exp_name) / "checkpoints"
+    ckpt_path = tmj.constant.WANDB_PATH_LOG / "track" / args.exp_name / "checkpoints"
     latest_ckpt = get_latest_ckpt(ckpt_path)
 
     if latest_ckpt is None:
-        raise FileNotFoundError("No checkpoint found.")
+        raise FileNotFoundError(f"No checkpoint found under: {ckpt_path}")
 
     logging.info(f"Using checkpoint: {latest_ckpt}")
     output_path = f"{latest_ckpt}/policy.onnx"
 
-    env_class = gmj.registry.get(args.task, "tracking_train_env_class")
-    task_cfg = gmj.registry.get(args.task, "tracking_config")
+    env_class = tmj.registry.get(args.task, "tracking_train_env_class")
+    task_cfg = tmj.registry.get(args.task, "tracking_config")
     env_cfg = task_cfg.env_config
     policy_config = task_cfg.policy_config
 
     import json
-    config_path = gmj.constant.WANDB_PATH_LOG / args.full_exp_name / "checkpoints" / "config.json"
+    config_path = tmj.constant.WANDB_PATH_LOG / "track" / args.exp_name / "checkpoints" / "config.json"
     with open(config_path, "r") as f:
         config = json.load(f)
         del config["policy_config"]["progress_fn"]
@@ -65,7 +65,7 @@ def main(args: Args):
         normalize_observations=False,
         restore_checkpoint_path=latest_ckpt,
         network_factory=network_factory,
-        wrap_env_fn=wrapper.wrap_for_brax_training,
+        wrap_env_fn=wrap_fn,
         num_envs=1,
     )
 

@@ -18,7 +18,7 @@ from tqdm import tqdm
 from pathlib import Path
 
 import track_mj as tmj
-from track_mj.envs.g1_tracking_dagger.play.play_g1_env_tracking_general import PlayG1TrackingGeneralEnv
+from track_mj.envs.g1_tracking.play.play_g1_env_tracking_general import PlayG1TrackingGeneralEnv
 
 
 @dataclass
