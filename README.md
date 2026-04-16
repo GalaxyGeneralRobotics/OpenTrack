@@ -101,7 +101,7 @@ As of **November 30, 2025**, we have open-sourced **a generalist model on LAFAN1
 
 ## Train from scratch
 
-### Preprocess the motion data
+### [Optional] Preprocess the motion data
 
   **If you want to train on your own motion data:**
   
@@ -124,29 +124,21 @@ As of **November 30, 2025**, we have open-sourced **a generalist model on LAFAN1
   python scripts/process_motion/preprocess_motion.py --task G1TrackingGeneral --num_batches 1 --smooth_start_end False
   ```
   
-  **[Optional]:** Argument `--smooth_start_end True` can generate a naturaltransitional motion before the original motion, making the motion start from the default pose.
+  Argument `--smooth_start_end True` can generate a natural transition motion from the default pose before the original motion.
   
   An inverse-kinematics solver generates a smooth stepping motion from the default pose to the first motion frame. The solver uses QP optimization (OSQP) with foot position/orientation constraints and CoM balance constraints. One or two foot steps are automatically chosen based on the foot-placement gap between default pose and the pose of the first frame.
 
   Here is a comparison of the original motion and the smoothed motion:
 
   <table>
-    <thead>
-      <tr>
-        <th>Original Motion</th>
-        <th>Smoothed Motion</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td>
-          <video src="./storage/assets/demo/original.mp4" controls muted loop playsinline width="100%"></video>
-        </td>
-        <td>
-          <video src="./storage/assets/demo/smoothed.mp4" controls muted loop playsinline width="100%"></video>
-        </td>
-      </tr>
-    </tbody>
+    <tr>
+      <th>Original Motion</th>
+      <th>Smoothed Motion</th>
+    </tr>
+    <tr>
+      <td><img src="./storage/assets/demo/original.gif" width="100%"></td>
+      <td><img src="./storage/assets/demo/smoothed.gif" width="100%"></td>
+    </tr>
   </table>
 
 
