@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import os.path
 from dataclasses import dataclass, fields, asdict, replace
-import pickle
 
 import flax.serialization
 import numpy as np
@@ -57,9 +56,6 @@ class Trajectory:
         serialized |= traj_model
         if self.transitions is not None:
             serialized |= traj_transitions
-        if self.obs_container is not None:
-            obs_container = pickle.dumps(self.obs_container)
-            serialized["obs_container"] = obs_container
         return serialized
 
     def save(self, path: str) -> None:
@@ -100,22 +96,15 @@ class Trajectory:
         converted_model = {}
         converted_data = {}
         converted_transitions = {}
-        converted_obs_container = None
         for key, value in data.items():
-            # ['joint_names', 'model', 'frequency', 'body_names', 'site_names', 'metadata']
             if key in TrajectoryInfo.get_attribute_names():
                 converted_info[key] = None if is_none_object_array(value) else value.tolist()
-            # ['njnt', 'jnt_type', 'nbody', 'body_rootid', 'body_weldid', 'body_mocapid', 'body_pos', 'body_quat', 'body_ipos', 'body_iquat', 'nsite', 'site_bodyid', 'site_pos', 'site_quat']
             elif key in TrajectoryModel.get_attribute_names():
                 converted_model[key] = None if is_none_object_array(value) else backend.array(value)
-            # ['qpos', 'qvel', 'xpos', 'xquat', 'cvel', 'subtree_com', 'site_xpos', 'site_xmat', 'split_points']
             elif key in TrajectoryData.get_attribute_names():
                 converted_data[key] = backend.array(value)
-            # ['observations', 'next_observations', 'absorbings', 'dones', 'actions', 'rewards']
             elif key in TrajectoryTransitions.get_attribute_names():
                 converted_transitions[key] = backend.array(value)
-            elif key == "obs_container":
-                converted_obs_container = value
             else:
                 raise ValueError(f"Unknown key {key} in the npz file.")
 
@@ -123,8 +112,6 @@ class Trajectory:
                 "info": TrajectoryInfo(model=TrajectoryModel(**converted_model), **converted_info)}
         if converted_transitions:
             _all["transitions"] = TrajectoryTransitions(**converted_transitions)
-        if converted_obs_container:
-            _all["obs_container"] = pickle.loads(converted_obs_container)
         return cls(**_all)
 
 
@@ -614,6 +601,7 @@ class TrajectoryModel:
             dic[key] = jnp.array(value) if (isinstance(value, jax.Array) or isinstance(value, np.ndarray)) else value
         return TrajectoryModel(**dic)
 
+
 @struct.dataclass
 class SingleData:
     """
@@ -679,7 +667,7 @@ class TrajectoryData(SingleData):
 
     def get(self, traj_index, sub_traj_index, backend: ModuleType = jnp):
         """
-        Retrieve the corresponding data for a given trajectory index and sub-trajectory index. [all attributes]
+        Retrieve the corresponding data for a given trajectory index and sub-trajectory index.
 
         Args:
             traj_index: Index of the trajectory.
@@ -708,9 +696,6 @@ class TrajectoryData(SingleData):
         )
 
     def get_fast(self, traj_index, sub_traj_index, backend: ModuleType = jnp):
-        r"""
-        Retrieve the corresponding data for a given trajectory index and sub-trajectory index. [qpos, qvel]
-        """
         # Get the start indices for the selected trajectory
         start_idx = self.split_points[traj_index]
 

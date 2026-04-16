@@ -1,13 +1,11 @@
 from dataclasses import replace
 import mujoco
-from mujoco import MjData, MjModel, mjx
+from mujoco import MjModel
 import numpy as np
 import jax
 import jax.numpy as jnp
 from flax import struct
 from typing import List
-from jax.sharding import Mesh, NamedSharding, PartitionSpec as P
-from jax.experimental.pjit import pjit
 
 from track_mj.utils.dataset.traj_class import Trajectory, TrajectoryData, TrajectoryInfo, interpolate_trajectories
 
@@ -151,7 +149,7 @@ class TrajectoryHandler(StatefulObject):
 
         """
 
-        # --- FILTER the trajectory based on the model and data (filter out those in `traj_info` & `traj_data` but not in `model`) ---
+        # --- filter the trajectory based on the model and data ---
         # get the joint names from current model
         joint_names = []
         joint_ids = []
@@ -224,7 +222,7 @@ class TrajectoryHandler(StatefulObject):
             traj_data = traj_data.remove_sites(jnp.array(list(site_to_be_removed.values())))
             traj_info = traj_info.remove_sites(list(site_to_be_removed.keys()))
 
-        # --- EXTEND the trajectory data's joints, bodies and sites using the current model and data (add those in `model` but not in `traj_info` & `traj_data`) ---
+        # --- extend the trajectory data's joints, bodies and sites using the current model and data ---
         for j_name, j_id in zip(joint_names, joint_ids):
             j_type = model.jnt_type[j_id]
             if j_name not in traj_info.joint_names:   # 'waist_roll_joint', 'waist_pitch_joint', 'left_wrist_pitch_joint', 'left_wrist_yaw_joint', 'right_wrist_pitch_joint', 'right_wrist_yaw_joint'
@@ -249,7 +247,7 @@ class TrajectoryHandler(StatefulObject):
                                                    model.site_bodyid[s_id])
                     traj_data = traj_data.add_site()
 
-        # --- REORDER the joints and bodies based on the model ---
+        # --- reorder the joints and bodies based on the model ---
         new_joint_order_names = []
         new_joint_order_ids_qpos = []
         new_joint_order_ids_qvel = []
@@ -494,31 +492,3 @@ class TrajectoryHandler(StatefulObject):
     @property
     def is_numpy(self):
         return self._is_numpy
-
-    # def check_if_trajectory_is_in_range(self, low, high, keys, j_idx, warn, clip_trajectory_to_joint_ranges):
-    #
-    #     if warn or clip_trajectory_to_joint_ranges:
-    #
-    #         # get q_pos indices
-    #         j_idx = j_idx[2:]   # exclude x and y
-    #         highs = dict(zip(keys[2:], high))
-    #         lows = dict(zip(keys[2:], low))
-    #
-    #         # check if they are in range
-    #         for i, item in enumerate(self._trajectory_files.items()):
-    #             k, d = item
-    #             if i in j_idx and k in keys:
-    #                 if warn:
-    #                     clip_message = "Clipping the trajectory into range!" if clip_trajectory_to_joint_ranges else ""
-    #                     if np.max(d) > highs[k]:
-    #                         warnings.warn("Trajectory violates joint range in %s. Maximum in trajectory is %f "
-    #                                       "and maximum range is %f. %s"
-    #                                       % (k, np.max(d), highs[k], clip_message), RuntimeWarning)
-    #                     elif np.min(d) < lows[k]:
-    #                         warnings.warn("Trajectory violates joint range in %s. Minimum in trajectory is %f "
-    #                                       "and minimum range is %f. %s"
-    #                                       % (k, np.min(d), lows[k], clip_message), RuntimeWarning)
-    #
-    #                 # clip trajectory to min & max
-    #                 if clip_trajectory_to_joint_ranges:
-    #                     self._trajectory_files[k] = np.clip(self._trajectory_files[k], lows[k], highs[k])

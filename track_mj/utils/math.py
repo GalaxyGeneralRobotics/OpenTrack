@@ -34,40 +34,6 @@ def rotate_obs(state, angle, idx_rot, idx_xvel, idx_yvel):
     return rotated_state
 
 
-def mat2angle_xy(mat):
-    """
-    Converts a rotation matrix to an angle in the x-y-plane.
-
-    Args:
-        mat (np.array): np.array of dim 9.
-
-    Returns:
-        Float constituting the rotation angle in the x-y--plane (in radians).
-
-    """
-
-    angle = mat_to_euler(mat.reshape((3, 3)))[-1]
-
-    return angle
-
-
-def angle2mat_xy(angle):
-    """
-    Converts a rotation angle in the x-y-plane to a rotation matrix.
-
-    Args:
-        angle (float): Angle to be converted.
-
-    Returns:
-        np.array of shape (3, 3)
-
-    """
-
-    mat = euler_to_mat(np.array([0, 0, angle]))
-
-    return mat
-
-
 def transform_angle_2pi(angle):
     """
     Transforms an angle to be in [-pi, pi].
@@ -816,7 +782,7 @@ def calculate_dif_root_angvel_local_differential(current_data, reference_data, l
         current_root_angular_vel_g, current_root_quat_g_inv
     )
 
-    ref_root_angular_vel_l = reference_data.qvel[3:6]       # NOTE: qvel of root is w.r.t. present root orientation!
+    ref_root_angular_vel_l = reference_data.qvel[3:6]
 
     dif_local_root_ang_vel = ref_root_angular_vel_l - current_root_angular_vel_l
     return dif_local_root_ang_vel
@@ -881,24 +847,6 @@ def calculate_dif_root_height(current_data, reference_data):
     dif_root_height = ref_root_height - current_root_height
 
     return dif_root_height
-
-
-# def calculate_dif_navi_torso_rp_old(current_data, reference_data):
-#     current_pelvis2world_rot = current_data.site_xmat[0]  # _pelvis_imu_site_id
-#     current_navi2world_rot = base2navi_transform(current_pelvis2world_rot)
-#     current_torso2world_rot = current_data.site_xmat[3]  # _torso_imu_site_id
-#     current_torso2navi_rot = current_navi2world_rot.T @ current_torso2world_rot
-#     current_navi_torso_rpy = jnp.array(jaxlie.SO3.from_matrix(current_torso2navi_rot).as_rpy_radians())
-
-#     ref_pelvis2world_rot = reference_data.site_xmat[0].reshape(3, 3)  # _pelvis_imu_site_id
-#     ref_navi2world_rot = base2navi_transform(ref_pelvis2world_rot)
-#     ref_torso2world_rot = reference_data.site_xmat[3].reshape(3, 3)  # _torso_imu_site_id
-#     ref_torso2navi_rot = ref_navi2world_rot.T @ ref_torso2world_rot
-#     ref_navi_torso_rpy = jnp.array(jaxlie.SO3.from_matrix(ref_torso2navi_rot).as_rpy_radians())
-
-#     dif_navi_torso_rpy = ref_navi_torso_rpy - current_navi_torso_rpy
-
-#     return dif_navi_torso_rpy[:2]
 
 
 def calculate_dif_navi_torso_rp(current_data, reference_data):

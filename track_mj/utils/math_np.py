@@ -44,6 +44,17 @@ def linvel_from_pos_diff(pos_curr: np.ndarray, pos_last: np.ndarray, dt: float) 
     return (pos_curr - pos_last) / dt
 
 
+def quat_to_mat(q: np.ndarray) -> np.ndarray:
+    """
+    Convert a unit quaternion (scalar-first: w, x, y, z) to a 3x3 rotation matrix.
+    """
+    w, x, y, z = q[0], q[1], q[2], q[3]
+    return np.array([
+        [1 - 2*(y*y + z*z),     2*(x*y - w*z),     2*(x*z + w*y)],
+        [    2*(x*y + w*z), 1 - 2*(x*x + z*z),     2*(y*z - w*x)],
+        [    2*(x*z - w*y),     2*(y*z + w*x), 1 - 2*(x*x + y*y)],
+    ])
+
 def quat_mul(q1: np.ndarray, q2: np.ndarray) -> np.ndarray:
     """
     Multiply two quaternions (scalar-first convention: w, x, y, z).

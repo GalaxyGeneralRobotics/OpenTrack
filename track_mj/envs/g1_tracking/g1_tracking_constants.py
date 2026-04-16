@@ -369,3 +369,9 @@ LAFAN1_SPECIALIST_DATASETS_2 = [
     'fallAndGetUp2_subject3',
     'fallAndGetUp3_subject1',
 ]
+
+
+TEST = [
+    # "Random_001_Tennis 001",
+    "Random_001_Tennis 001 no"
+]

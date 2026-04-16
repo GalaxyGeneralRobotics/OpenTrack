@@ -9,10 +9,7 @@ from mujoco_playground._src import mjx_env, wrapper
 
 
 class VmapWrapper(Wrapper):
-    r"""
-    Vectorizes Brax env.
-    `brax/envs/wrappers/training.py - VmapWrapper`
-    """
+    """Vectorizes Brax env."""
 
     def __init__(self, env: Env, batch_size: Optional[int] = None):
         super().__init__(env)
@@ -24,16 +21,11 @@ class VmapWrapper(Wrapper):
         return jax.vmap(self.env.reset, in_axes=(0, None))(rng, trajectory_data)
 
     def step(self, state: State, action: jax.Array, trajectory_data) -> State:
-        return jax.vmap(self.env.step, in_axes=(0, 0, None))(
-            state, action, trajectory_data
-        )
+        return jax.vmap(self.env.step, in_axes=(0, 0, None))(state, action, trajectory_data)
 
 
 class ModifiedEpisodeWrapper(Wrapper):
-    r"""
-    Maintains episode step count and sets done at episode end.
-    `brax/envs/wrappers/training.py - EpisodeWrapper`
-    """
+    """Maintains episode step count and sets done at episode end."""
 
     def __init__(self, env: Env, episode_length: int, action_repeat: int):
         super().__init__(env)
@@ -41,11 +33,7 @@ class ModifiedEpisodeWrapper(Wrapper):
         self.action_repeat = action_repeat
 
     def reset(self, rng: jax.Array, trajectory_data) -> State:
-        # rng: (num_envs, 2)
-        # -> state [dict]: (num_envs, ...)
         state = self.env.reset(rng, trajectory_data)
-
-        # (num_envs,)
         state.info["steps"] = jp.zeros(rng.shape[:-1])
         state.info["truncation"] = jp.zeros(rng.shape[:-1])
         # Keep separate record of episode done as state.info['done'] can be erased
@@ -66,45 +54,28 @@ class ModifiedEpisodeWrapper(Wrapper):
             nstate = self.env.step(state, action, trajectory_data)
             return nstate, nstate.reward
 
-        # state [mjx_env.State]: (num_envs, ...)
-        # -> state [mjx_env.State]: (num_envs, ...)
-        # -> rewards [jax.Array]: (action_repeat, num_envs)
         state, rewards = jax.lax.scan(f, state, (), self.action_repeat)
-        state = state.replace(reward=jp.sum(rewards, axis=0))        # (num_envs,)
+        state = state.replace(reward=jp.sum(rewards, axis=0))
         steps = state.info["steps"] + self.action_repeat
         done = state.done
         state.info["steps"] = steps
 
-        # NOTE: 
-        # In current `env.step()` implementation, if any envs are done in NOW step, they are reset in `env.step()` (w/o wrapper). Their `done, info, reward, metrics` are NOT reset/overwritten (so `done=1`), `episode_metrics` are NOT modified,
-        #    and only `data, obs` are overwritten.
-        # So, for the envs that are done and reset, `state.info` here is the `info` after the last step before resetting; for the envs that are not done, `state.info` is the `info` after last step. And `prev_done` here includes 
-        #    only the envs that were done in last step.
-        # Therefore:
-        #    1. `*= (1-prev_done)` is needed to zero out the `episode_metrics` of the envs that were done in last step, so that they won't accumulate metrics any more.
-        #       Note that this leads to 1-action-step-lag to the real training situation: Envs rollout for 1 action step before their metrics are cleared.
-        #       Note that this only affects metrics logging (metrics at (k+1)-step reflects step k's situation), and does harm to training.
-        #    2. If `action_repeat > 1`, the `length` of envs that were done in the middle will still increase by `action_repeat` (instead of some value < `action_repeat`).
-
         # Aggregate state metrics into episode metrics
-        prev_done = state.info["episode_done"]                                      # done of previous `step()` calling
-        state.info["episode_metrics"]["sum_reward"] += jp.sum(rewards, axis=0)      # sum of envs
+        prev_done = state.info["episode_done"]
+        state.info["episode_metrics"]["sum_reward"] += jp.sum(rewards, axis=0)
         state.info["episode_metrics"]["length"] += self.action_repeat
         state.info["episode_metrics"]["average_sum_reward"] = (
-            state.info["episode_metrics"]["sum_reward"]
-            / state.info["episode_metrics"]["length"]
+            state.info["episode_metrics"]["sum_reward"] / state.info["episode_metrics"]["length"]
         )
 
-        # In our implementation, all reward terms are included in state.metrics
         for metric_name in state.metrics.keys():
             if metric_name != "reward":
-                state.info["episode_metrics"][metric_name] += state.metrics[metric_name]    # sum across episode steps (action steps)
+                state.info["episode_metrics"][metric_name] += state.metrics[metric_name]
                 state.info["episode_metrics"]["average_" + metric_name] = (
-                    state.info["episode_metrics"][metric_name]
-                    / state.info["episode_metrics"]["length"]
-                )                                                                   # mean across episode steps (action steps)
+                    state.info["episode_metrics"][metric_name] / state.info["episode_metrics"]["length"]
+                )
                 state.info["episode_metrics"][metric_name] *= 1 - prev_done
-        
+
         state.info["episode_metrics"]["sum_reward"] *= 1 - prev_done
         state.info["episode_metrics"]["length"] *= 1 - prev_done
         state.info["episode_done"] = done
@@ -112,14 +83,7 @@ class ModifiedEpisodeWrapper(Wrapper):
 
 
 class ModifiedDomainRandomizationVmapWrapper(Wrapper):
-    r"""
-    Brax wrapper for domain randomization.
-    `mujoco_playground/_src/wrapper.py - DomainRandomizationVmapWrapper`
-
-    NOTICE: Original `DomainRandomizationVmapWrapper` inherits from `mujoco_playground._src.wrapper.Wrapper`, but not from `brax.envs.base.Wrapper`.
-            However, this only affects whether the return value of `step()` and `reset()` is of type `brax.envs.base.State` or `mujoco_playground.mjx_env.MjxEnv`.
-            Thus, the implementation below does not affect correctness.
-    """
+    """Brax wrapper for domain randomization."""
 
     def __init__(
         self,
@@ -139,21 +103,15 @@ class ModifiedDomainRandomizationVmapWrapper(Wrapper):
             env = self._env_fn(mjx_model=mjx_model)
             return env.reset(rng, trajectory_data)
 
-        state = jax.vmap(reset, in_axes=[self._in_axes, 0, None])(
-            self._mjx_model_v, rng, trajectory_data
-        )
+        state = jax.vmap(reset, in_axes=[self._in_axes, 0, None])(self._mjx_model_v, rng, trajectory_data)
         return state
 
-    def step(
-        self, state: mjx_env.State, action: jax.Array, trajectory_data
-    ) -> mjx_env.State:
+    def step(self, state: mjx_env.State, action: jax.Array, trajectory_data) -> mjx_env.State:
         def step(mjx_model, s, a, trajectory_data):
             env = self._env_fn(mjx_model=mjx_model)
             return env.step(s, a, trajectory_data)
 
-        res = jax.vmap(step, in_axes=[self._in_axes, 0, 0, None])(
-            self._mjx_model_v, state, action, trajectory_data
-        )
+        res = jax.vmap(step, in_axes=[self._in_axes, 0, 0, None])(self._mjx_model_v, state, action, trajectory_data)
         return res
 
 
@@ -179,8 +137,6 @@ def wrap_fn(
       An environment that is wrapped with Episode and AutoReset wrappers.  If the
       environment did not already have batch dimensions, it is additional Vmap
       wrapped.
-      
-    NOTICE: Original `wrap_fn` is in `mujoco_playground/_src/wrapper.py - wrap_for_brax_training()`, and it has an additional wrapping step `BraxAutoResetWrapper`
     """
 
     if randomization_fn is None:

@@ -27,7 +27,7 @@ from track_mj.utils.dataset.traj_class import (
 )
 from track_mj.utils.dataset.traj_handler import TrajectoryHandler, TrajCarry
 from track_mj.utils.mujoco import mj_jntname2qposid, mj_jntid2qposid
-from track_mj.utils.dataset.traj_process import ExtendTrajData
+from track_mj.utils.dataset.traj_process import ExtendTrajData, SmoothStartEndTransition
 from track_mj.utils import math as gmth
 from track_mj.dr.domain_randomize_tracking import (
     domain_randomize,

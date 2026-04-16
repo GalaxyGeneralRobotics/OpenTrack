@@ -9,12 +9,7 @@ import time
 import mujoco
 import mujoco.viewer
 
-from track_mj.utils.dataset.traj_class import (
-    Trajectory,
-    TrajectoryInfo,
-    TrajectoryModel,
-    TrajectoryData,
-    SingleData)
+from track_mj.utils.dataset.traj_class import Trajectory
 
 import osqp
 import scipy.sparse as sp
@@ -589,23 +584,14 @@ class StartEndTransitionHandler():
             self.result.insert(0, self.default_qpos.copy())
 
     def generate_smooth_transition(self, q_start, q_end, transition_len):
-        """使用受约束的插值生成平滑过渡"""
         traj = []
         
         for t in range(transition_len):
             alpha = t / (transition_len - 1)
-            
-            # 🔧 改进2: 分层插值策略
             q_interp = np.zeros_like(q_start)
-            
-            # Base 位置和旋转 - 使用正确的插值
             q_interp[:7] = interp_qpos(q_start[:7], q_end[:7], alpha)
-            
-            # 关节角度 - 使用加权插值，保持运动学合理性
-            joint_alpha = self.smooth_alpha(alpha)  # 使用平滑函数
+            joint_alpha = self.smooth_alpha(alpha)
             q_interp[7:] = q_start[7:] + (q_end[7:] - q_start[7:]) * joint_alpha
-            
-            # 🔧 改进3: 运动学修正
             q_interp = self.kinematic_correction(q_interp, alpha)
             
             traj.append(q_interp)
@@ -613,25 +599,16 @@ class StartEndTransitionHandler():
         return traj
 
     def smooth_alpha(self, alpha):
-        """平滑插值函数，避免突变"""
-        # 使用 S 曲线而非线性
         return 0.5 * (1 - np.cos(np.pi * alpha))
 
     def kinematic_correction(self, q, alpha):
-        """轻微的运动学修正，确保合理性"""
-        # 这里可以添加轻微的 IK 修正，但迭代次数很少
-        # 主要目的是保证脚部不会严重穿地或悬空
-        
-        # 简化版：仅确保基本的高度约束
         self.mj_data.qpos[:] = q
         mujoco.mj_forward(self.mj_model, self.mj_data)
-        
-        # 检查脚部高度，如果太低就稍微抬高 base
         l_foot_z = self.mj_data.site_xpos[self.left_foot_site_id][2]
         r_foot_z = self.mj_data.site_xpos[self.right_foot_site_id][2]
         min_foot_z = min(l_foot_z, r_foot_z)
         
-        if min_foot_z < 0.02:  # 脚部过低
-            q[2] += (0.02 - min_foot_z) * 0.5  # 轻微抬高
+        if min_foot_z < 0.02:
+            q[2] += (0.02 - min_foot_z) * 0.5
         
         return q

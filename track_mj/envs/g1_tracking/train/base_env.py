@@ -16,7 +16,6 @@
 
 from typing import Any, Dict, Optional, Union
 
-from etils import epath
 import jax
 from ml_collections import config_dict
 import mujoco

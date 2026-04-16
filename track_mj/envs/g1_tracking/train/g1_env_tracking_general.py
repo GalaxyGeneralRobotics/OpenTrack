@@ -27,7 +27,7 @@ from track_mj.utils.dataset.traj_class import (
 )
 from track_mj.utils.dataset.traj_handler import TrajectoryHandler, TrajCarry
 from track_mj.utils.mujoco import mj_jntname2qposid, mj_jntid2qposid
-from track_mj.utils.dataset.traj_process import ExtendTrajData
+from track_mj.utils.dataset.traj_process import ExtendTrajData, SmoothStartEndTransition
 from track_mj.utils import math as gmth
 
 ENABLE_PUSH = True
@@ -48,7 +48,11 @@ def g1_tracking_general_task_config() -> config_dict.ConfigDict:
         history_len=0,
         soft_joint_pos_limit_factor=0.95,
         reference_traj_config=config_dict.create(
-            name={"lafan1": consts.LAFAN1_SPECIALIST_DATASETS_1},
+            name={
+                # "lafan1": consts.LAFAN1_SPECIALIST_DATASETS_1
+                "test": consts.TEST
+            },
+            
             random_start=True,
             fixed_start_frame=0,        # only works if random_start is False
         ),
@@ -568,7 +572,7 @@ class G1TrackingGeneralEnv(g1_base.G1Env):
         th_params = self._th_params if self._th_params is not None else {}
         return TrajectoryHandler(model=self._mj_model, warn=warn, traj=traj, control_dt=self.dt, **th_params)
 
-    def prepare_trajectory(self, dataset_dict: Dict[str, List[str]]) -> Trajectory:
+    def prepare_trajectory(self, dataset_dict: Dict[str, List[str]], smooth_start_end: bool = True) -> Trajectory:
         all_trajectories = []
         for dataset_name, traj_names in dataset_dict.items():
             print(f"Loading dataset: {dataset_name} with {len(traj_names)} trajectories.")
@@ -582,7 +586,7 @@ class G1TrackingGeneralEnv(g1_base.G1Env):
                     traj = Trajectory.load(traj_path, backend=jp)
                     if not traj.data.is_complete:
                         print(f"Trajectory {t_name} is not complete. Extending...")
-                        traj = self.extend_motion(traj)
+                        traj = self.extend_motion(traj, smooth_start_end)
                         traj.save(traj_path)  # save trajectory before recalculating velocity
                     print(f"Loaded trajectory {t_name}")
 
@@ -611,7 +615,7 @@ class G1TrackingGeneralEnv(g1_base.G1Env):
 
         return trajectory.data
 
-    def preprocess_trajectory(self, dataset_dict: Dict[str, List[str]], batch_idx: int, num_batches: int) -> Trajectory:
+    def preprocess_trajectory(self, dataset_dict: Dict[str, List[str]], batch_idx: int, num_batches: int, smooth_start_end: bool = True) -> Trajectory:
         all_trajectories = []
         num_trajectory = sum(len(traj_names) for traj_names in dataset_dict.values())
 
@@ -646,14 +650,14 @@ class G1TrackingGeneralEnv(g1_base.G1Env):
 
                 if current_idx >= start_idx:
                     # load the npz file
-                    traj_path = os.path.join(dataset_dir, f"{t_name}.npz")
+                    traj_path = os.path.join(dataset_dir, "UnitreeG1", f"{t_name}.npz")
 
                     if os.path.exists(traj_path):
                         traj = Trajectory.load(traj_path, backend=jp)
 
                         if not traj.data.is_complete:
                             print(f"Trajectory {t_name} is not complete. Extending...")
-                            traj = self.extend_motion(traj)
+                            traj = self.extend_motion(traj, smooth_start_end=smooth_start_end)
                             traj.save(traj_path)  # save trajectory before recalculating velocity
                         print(f"Loaded trajectory {t_name}")
 
@@ -676,8 +680,12 @@ class G1TrackingGeneralEnv(g1_base.G1Env):
 
         return None
 
-    def extend_motion(self, traj: Trajectory) -> Trajectory:
+    def extend_motion(self, traj: Trajectory, smooth_start_end: bool = True) -> Trajectory:
         assert traj.data.n_trajectories == 1
+
+        if smooth_start_end:
+            start_end_transition_smoother = SmoothStartEndTransition(model=self._mj_model, traj=traj)
+            traj = start_end_transition_smoother.run_interp(return_backend=jp)  # use default params
         
         traj_data, traj_info = interpolate_trajectories(traj.data, traj.info, 1.0 / self.dt)
         traj = Trajectory(info=traj_info, data=traj_data)

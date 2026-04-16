@@ -1,6 +1,5 @@
 from copy import deepcopy
-from dataclasses import dataclass, fields, asdict, replace
-
+from dataclasses import replace
 import jax.numpy as jnp
 import mujoco
 import numpy as np
@@ -12,12 +11,7 @@ from track_mj.utils.dataset.traj_class import (
     TrajectoryModel,
     TrajectoryData,
     SingleData)
-from track_mj.utils.dataset.traj_handler import (
-    TrajCarry,
-    TrajState,
-    TrajectoryHandler,
-    StatefulObject)
-
+from track_mj.utils.dataset.traj_handler import TrajCarry
 from track_mj.utils.dataset.start_end_transition_handler import StartEndTransitionHandler
 from track_mj.envs.g1_tracking import g1_tracking_constants as consts
 
@@ -27,10 +21,9 @@ class ReplayCallback:
 
     @staticmethod
     def __call__(env, model, data, traj_sample, carry):
-        # Sets the Mujoco datastructure to the state specified in the trajectory data (xpos, xquat, cvel, qpos, qvel (if available))
         data = env.set_sim_state_from_traj_data(data, traj_sample, carry)
-        mujoco.mj_forward(model, data)          # add more attrs to MjData
-        carry = env.th.update_state(carry)      # update carry (i.e. traj_no, subtraj_step_no, subtraj_step_no_init)
+        mujoco.mj_forward(model, data)
+        carry = env.th.update_state(carry)
         return model, data, carry
 
 
@@ -152,7 +145,6 @@ class ExtendTrajData(ReplayCallback):
             site_names.append(s_name)
         assert keys is None or len(keys) == 0, f"Could not find the following site names: {keys}"
         return site_names, list(ids)
-    
 
 class SmoothStartEndTransition:
 
@@ -207,9 +199,6 @@ class SmoothStartEndTransition:
                 split_points = return_backend.array([0, qpos_traj.shape[0]]),
                 ),
             transitions = self.traj.transitions if self.traj.transitions is not None else None,
-            obs_container = self.traj.obs_container if self.traj.obs_container is not None else None
         )
 
         return ret_traj
-
-    
