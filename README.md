@@ -103,15 +103,9 @@ As of **November 30, 2025**, we have open-sourced **a generalist model on LAFAN1
 
 ### [Optional] Preprocess the motion data
 
-  **If you want to train on your own motion data:**
-  
-  You should first put the `.npz` files under `storage/data/mocap/<your_dataset_name>/UnitreeG1`.
+  If you want to train on your own motion data, you should first put the `.npz` files under `storage/data/mocap/<your_dataset_name>/UnitreeG1`. Then, you should run the following preprocess script to:
 
-  **Preprocess the motion data:**
-
-  You should run the following preprocess script to:
-
-  1. Align the frequency or the original motion data to the desired control frequency.
+  1. Align the frequency or the original motion data to the desired control frequency (50Hz by default).
   2. Recalculate velocities (angular, linear, joint) and other state features based on the aligned frequency.
   
   **Note:** The preprocess script will overwrite the original motion files.
