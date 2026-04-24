@@ -32,4 +32,3 @@ class PolicyArgs:
 @dataclass
 class ONNXPolicyArgs(PolicyArgs):
     onnx_dir: str = ""
-    use_unified_model: bool = True

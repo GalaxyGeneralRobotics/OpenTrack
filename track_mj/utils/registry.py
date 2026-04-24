@@ -6,6 +6,7 @@ _REGISTRY = defaultdict(dict)
 _CATEGORIES = [
     "tracking_train_env_class",
     "tracking_play_env_class",
+    "tracking_dagger_train_env_class",
     "tracking_dagger_play_env_class",
     "tracking_play_command_class",
     "tracking_config",

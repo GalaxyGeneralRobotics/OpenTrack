@@ -13,6 +13,8 @@ This repository is the official implementation of OpenTrack, an open-source huma
 
 # News 🚩
 
+[April 24, 2026] DAgger training code released. **Now you can distill your teacher trackers into a generalist student tracker.**
+
 [November 30, 2025] LAFAN1 generalist v1 released. **Now you can track cartwheel, kungfu, fall and getup, and many other motions within a single policy.**
 
 [September 19, 2025] Simple Domain Randomization released.
@@ -22,9 +24,9 @@ This repository is the official implementation of OpenTrack, an open-source huma
 # TODOs
 
 - [x] Release motion tracking codebase
-- [x] Release simple domain randomization
+- [x] Release domain randomization
 - [x] Release pretrained LAFAN1 generalist v1 checkpoints
-- [ ] Release DAgger code
+- [x] Release DAgger code
 - [ ] Release AnyAdapter
 - [ ] Release more pretrained checkpoints
 - [ ] Release real-world deployment code
@@ -67,6 +69,9 @@ This repository is the official implementation of OpenTrack, an open-source huma
     ├── logs
     │   ├── dagger      # dagger student checkpoints
     │   └── track       # tracking checkpoints  
+    ├── training_configs
+    │   └── dagger
+    │       └── demo.json    
     └── ...
     ```
 
@@ -82,14 +87,14 @@ This repository is the official implementation of OpenTrack, an open-source huma
 
 ## Initialize environment
 
-
-```shell
-  source .venv/bin/activate; source .env;
-```
+1. Initialize the MuJoCo environment:
+  ```shell
+   source .venv/bin/activate; source .env;
+  ```
 
 ## Play pretrained checkpoints
 
-1. Download pretrained checkpoints and configs from [checkpoints and configs](https://drive.google.com/drive/folders/1wDL4Chr6sGQiCx1tbvhf9DowN73cP_PF?usp=drive_link), and put them under `storage/logs/dagger`. Visualization results: [videos](https://drive.google.com/drive/folders/1yFAG2UIZq5-504MkKTwevquwRO1OsGOL?usp=sharing).
+1. Download pretrained checkpoints and configs from [checkpoints and configs](https://drive.google.com/drive/folders/1wDL4Chr6sGQiCx1tbvhf9DowN73cP_PF?usp=drive_link), and put them under `storage/logs/dagger/`. Visualization results: [videos](https://drive.google.com/drive/folders/1yFAG2UIZq5-504MkKTwevquwRO1OsGOL?usp=sharing).
 
 2. Run the evaluation script:
 
@@ -136,13 +141,27 @@ As of **November 30, 2025**, we have open-sourced **a generalist model on LAFAN1
   </table>
 
 
-### Train the specialist teachers
-
+### Train the specialist teachers:
   ```shell
-  python -m track_mj.learning.train.train_ppo_track --task G1TrackingGeneralDR --exp_name <your_exp_name>
+   python -m track_mj.learning.train.train_ppo_track --task G1TrackingGeneralDR --exp_name <your_exp_name>
+  ```
+  If you want to modify the training configuration, you should edit the config file associated with the corresponding environment. For example, for the command above, you should modify the `g1_tracking_general_dr_task_config` in the `OpenTrack/track_mj/envs/g1_tracking/train/g1_env_tracking_general_dr.py`.
+
+### Train the generalist student:
+  For training on one GPU:
+  ```shell
+   python -m track_mj.learning.train.train_dagger --task G1TrackingGeneralDR --exp_name <your_exp_name> --dagger-config-path <your_config_path>
+  ```
+  For training on multiple GPUs (8 for example):
+  ```shell
+   torchrun --nproc_per_node=8 -m track_mj.learning.train.train_dagger \
+    --task G1TrackingGeneralDR \
+    --exp-name <your_exp_name> \
+    --dagger-config-path <your_config_path> \
+    --use_ddp
   ```
 
-If you want to modify the training configuration, you should edit the config file associated with the corresponding environment. For example, for the command above, you should modify the `g1_tracking_general_dr_task_config` in the `OpenTrack/track_mj/envs/g1_tracking/train/g1_env_tracking_general_dr.py`.
+  For an example DAgger config, please refer to `storage/training_configs/dagger/demo.json`.
 
 ## Evaluate the model
 
@@ -154,6 +173,15 @@ If you want to modify the training configuration, you should edit the config fil
   
   # Next, run the evaluation script
   python -m track_mj.eval.tracking.mj_onnx_video --task G1TrackingGeneral --exp_name <your_exp_name> [--use_viewer] [--use_renderer] [--play_ref_motion]
+  ```
+
+### Evaluate the generalist student:
+  ```shell
+   # First, convert the Torch model checkpoint to the ONNX format
+   python -m track_mj.eval.dagger.torch2onnx --ckpt_dir "storage/logs/dagger/<your_exp_name>" 
+   # This writes ONNX to storage/logs/dagger/<your_exp_name>/checkpoints/model.onnx
+   # Next, run the evaluation script
+   python -m track_mj.eval.dagger.mj_onnx_video --task G1TrackingGeneral --exp_name <your_exp_name>
   ```
 
 # Acknowledgement

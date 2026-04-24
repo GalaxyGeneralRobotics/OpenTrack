@@ -56,7 +56,6 @@ def get_policy(args: PolicyArgs):
 
 class MLP_Policy_ONNX:
     def __init__(self, config: ONNXPolicyArgs):
-        assert config.use_unified_model, "MLP ONNX policy requires use_unified_model=True"
         self.policy_obs_key = config.policy_obs_key
         self.onnx_path = os.path.join(config.onnx_dir, "model.onnx")
         self.onnx_model = rt.InferenceSession(self.onnx_path, providers=["CPUExecutionProvider"])

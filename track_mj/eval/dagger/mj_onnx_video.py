@@ -35,16 +35,6 @@ class State:
     obs: dict
 
 
-def get_latest_ckpt(dir):
-    from pathlib import Path
-    import re
-    ckpt_dirs = [d for d in Path(dir).glob("*") if d.is_dir()]
-    ckpt_dirs.sort(key=lambda x: int(re.search(r'(\d+)', x.stem).group(1)) if re.search(r'(\d+)', x.stem) else 0)
-    if not ckpt_dirs:
-        return None
-    latest_dir = ckpt_dirs[-1]
-    return latest_dir
-
 def play(args: Args):
     env_class = tmj.registry.get(args.task, "tracking_dagger_play_env_class")
     task_cfg = tmj.registry.get(args.task, "tracking_config")
@@ -68,9 +58,8 @@ def play(args: Args):
 
     policy_args = PolicyArgs.from_config_dict(config["policy_config"]["policy_args"])
 
-    latest_ckpt = get_latest_ckpt(os.path.join(exp_dir, "checkpoints"))
-    assert latest_ckpt is not None, f"No checkpoint found in {exp_dir}"
-    onnx_dir = str(latest_ckpt)
+    onnx_path = exp_dir / "checkpoints" / "model.onnx"
+    assert onnx_path.exists(), f"ONNX model does not exist: {onnx_path}"
     
     env: PlayG1TrackingGeneralEnv = env_class(
         terrain_type=env_cfg.terrain_type,
@@ -82,14 +71,14 @@ def play(args: Args):
     )
     
     policy = get_policy_onnx(ONNXPolicyArgs(**{
-        "onnx_dir": onnx_dir, 
-        "use_unified_model": True, 
+        "onnx_dir": str(onnx_path),
         **vars(policy_args)
     }))
     
     state = env.reset()
 
-    len_traj = env.th.traj.data.qpos.shape[0] - len(env_cfg.reference_traj_config.name[env_cfg.reference_traj_config.name.keys()[0]]) - 1
+    first_dataset_name = next(iter(env_cfg.reference_traj_config.name.keys()))
+    len_traj = env.th.traj.data.qpos.shape[0] - len(env_cfg.reference_traj_config.name[first_dataset_name]) - 1
 
     for i in tqdm(range(len_traj)):
         obs = state.obs[policy_args.policy_obs_key].reshape(1, -1).astype(np.float32)

@@ -25,7 +25,6 @@ def get_latest_ckpt(dir):
     return ckpts[-1] if ckpts else None
 
 def convert_torch2onnx(
-    export_args: ExportArgs,
     ckpt_path: str,
     output_path: str,
     policy_args: PolicyArgs,
@@ -101,7 +100,6 @@ def convert_torch2onnx(
 
 
 def convert_torch2pt(
-    export_args: ExportArgs,
     ckpt_path: str,
     output_path: str,
     policy_args: PolicyArgs,
@@ -170,26 +168,18 @@ def main(export_args: ExportArgs):
     ckpt_path = str(latest_ckpt)
     
     if export_args.export_onnx:
-        export_jobs = [(export_args, "")]  # single export, no suffix
-
-        for job_args, suffix in export_jobs:
-            output_path_onnx = os.path.join(
-                os.path.dirname(ckpt_path),
-                os.path.basename(ckpt_path).replace(".pth", f"{suffix}.onnx"),
-            )
-            print(f"Exporting ONNX model to {output_path_onnx}...")
-            convert_torch2onnx(
-                export_args=job_args,
-                ckpt_path=ckpt_path,
-                output_path=output_path_onnx,
-                policy_args=policy_args,
-            )
+        output_path_onnx = os.path.join(os.path.dirname(ckpt_path), "model.onnx")
+        print(f"Exporting ONNX model to {output_path_onnx}...")
+        convert_torch2onnx(
+            ckpt_path=ckpt_path,
+            output_path=output_path_onnx,
+            policy_args=policy_args,
+        )
 
     if export_args.export_pt:
         output_path_pt = os.path.join(os.path.dirname(ckpt_path), os.path.basename(ckpt_path).replace(".pth", ".pt"))
         print(f"Exporting TorchScript model to {output_path_pt}...")
         convert_torch2pt(
-            export_args=export_args,
             ckpt_path=ckpt_path,
             output_path=output_path_pt,
             policy_args=policy_args,

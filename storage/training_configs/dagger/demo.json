@@ -1,0 +1,76 @@
+{
+    "motion_clusters": [
+        {
+            "cluster_id": 0,
+            "prob": 0.25,
+            "teacher_ckpt_dir": "storage/logs/track/04202149_G1TrackingGeneralDR_specialist_1",
+            "teacher_onnx_path": "storage/logs/track/04202149_G1TrackingGeneralDR_specialist_1/checkpoints/002000158720/policy.onnx",
+            "motions": [
+                "dance1_subject1",
+                "dance1_subject2",
+                "dance1_subject3",
+                "dance2_subject1",
+                "dance2_subject2",
+                "dance2_subject3",
+                "dance2_subject4",
+                "dance2_subject5"
+            ]
+        },
+        {
+            "cluster_id": 1,
+            "prob": 0.25,
+            "teacher_ckpt_dir": "storage/logs/track/04182254_G1TrackingGeneralDR_specialist_2",
+            "teacher_onnx_path": "storage/logs/track/04182254_G1TrackingGeneralDR_specialist_2/checkpoints/002000158720/policy.onnx",
+            "motions": [
+                "fallAndGetUp1_subject1",
+                "fallAndGetUp1_subject4",
+                "fallAndGetUp1_subject5",
+                "fallAndGetUp2_subject2",
+                "fallAndGetUp2_subject3",
+                "fallAndGetUp3_subject1"
+            ]
+        },
+        {
+            "cluster_id": 2,
+            "prob": 0.25,
+            "teacher_ckpt_dir": "storage/logs/track/04212232_G1TrackingGeneralDR_specialist_3",
+            "teacher_onnx_path": "storage/logs/track/04212232_G1TrackingGeneralDR_specialist_3/checkpoints/002000158720/policy.onnx",
+            "motions": [
+                "fight1_subject2",
+                "fight1_subject3",
+                "fight1_subject5",
+                "fightAndSports1_subject1",
+                "fightAndSports1_subject4"
+            ]
+        },
+        {
+            "cluster_id": 3,
+            "prob": 0.25,
+            "teacher_ckpt_dir": "storage/logs/track/04212237_G1TrackingGeneralDR_specialist_4",
+            "teacher_onnx_path": "storage/logs/track/04212237_G1TrackingGeneralDR_specialist_4/checkpoints/002000158720/policy.onnx",
+            "motions": [
+                "jumps1_subject1",
+                "jumps1_subject2",
+                "jumps1_subject5",
+                "run1_subject2",
+                "run1_subject5",
+                "run2_subject1",
+                "run2_subject4",
+                "sprint1_subject2",
+                "sprint1_subject4",
+                "walk1_subject1",
+                "walk1_subject2",
+                "walk1_subject5",
+                "walk2_subject1",
+                "walk2_subject3",
+                "walk2_subject4",
+                "walk3_subject1",
+                "walk3_subject2",
+                "walk3_subject3",
+                "walk3_subject4",
+                "walk3_subject5",
+                "walk4_subject1"
+            ]
+        }
+    ]
+}

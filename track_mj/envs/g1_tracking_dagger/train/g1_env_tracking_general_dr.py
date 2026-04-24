@@ -7,16 +7,17 @@ import jax.numpy as jp
 from functools import partial
 import numpy as np
 from tqdm import tqdm
+
 import mujoco
 from mujoco import MjData, mjx
 from mujoco.mjx._src import math
 from mujoco_playground._src import mjx_env
 from mujoco_playground._src.collision import geoms_colliding
 
-import track_mj as tmj
-from track_mj.envs.g1_tracking.train import base_env as g1_base
-from track_mj.envs.g1_tracking.train import g1_env_tracking_general
-from track_mj.envs.g1_tracking import g1_tracking_constants as consts
+import track_mj as tmj  
+from track_mj.envs.g1_tracking_dagger.train import base_env as g1_base
+from track_mj.envs.g1_tracking_dagger.train import g1_env_tracking_general
+from track_mj.envs.g1_tracking_dagger import g1_tracking_constants as consts
 from track_mj.utils.dataset.traj_class import (
     Trajectory,
     TrajectoryData,
@@ -27,9 +28,9 @@ from track_mj.utils.dataset.traj_class import (
 )
 from track_mj.utils.dataset.traj_handler import TrajectoryHandler, TrajCarry
 from track_mj.utils.mujoco import mj_jntname2qposid, mj_jntid2qposid
-from track_mj.utils.dataset.traj_process import ExtendTrajData, SmoothStartEndTransition
+from track_mj.utils.dataset.traj_process import ExtendTrajData
 from track_mj.utils import math as gmth
-from track_mj.dr.domain_randomize_tracking import (
+from track_mj.dr.domain_randomize_tracking_dagger import (
     domain_randomize,
     domain_randomize_terrain,
     domain_randomize_motor_ctrl,
@@ -52,8 +53,11 @@ def g1_tracking_general_dr_task_config() -> config_dict.ConfigDict:
         recalculate_vel_in_reference_motion=True,
         history_len=0,
         soft_joint_pos_limit_factor=0.95,
+        student_use_residual_action=True,
+        dagger_horizon=1,
+        dagger_learning_epochs=10,
         reference_traj_config=config_dict.create(
-            name={"lafan1": consts.LAFAN1_SPECIALIST_DATASETS_4},
+            name={"lafan1": consts.LAFAN1_SPECIALIST_DATASETS_1},
             random_start=True,
             fixed_start_frame=0,        # only works if random_start is False
         ),
@@ -142,31 +146,9 @@ def g1_tracking_general_dr_task_config() -> config_dict.ConfigDict:
             magnitude_range=[0.1, 1.0],
         ),
         obs_scales_config=config_dict.create(joint_vel=0.05, dif_joint_vel=0.05),
-        obs_keys=[
-            "dif_joint_pos",
-            "dif_joint_vel",
-            "gvec_pelvis",
-            "gyro_pelvis",
-            "joint_pos",
-            "joint_vel",
-            "last_motor_targets",
-            "ref_root_height",
-            "ref_feet_height",
-        ],
-        privileged_obs_keys=[
-            "gyro_pelvis",
-            "gvec_pelvis",
-            "linvel_pelvis",
-            "dif_torso_rp",
-            "joint_pos",
-            "joint_vel",
-            "last_motor_targets",
-            "dif_joint_pos",
-            "dif_joint_vel",
-            "feet_contact",
-            "dif_feet_height",
-            "dif_root_height",
-        ],
+        obs_keys = None,
+        auxiliary_obs_keys = None,
+        privileged_obs_keys = None,
         history_keys=[
             "gyro_pelvis",
             "gvec_pelvis",
@@ -176,49 +158,27 @@ def g1_tracking_general_dr_task_config() -> config_dict.ConfigDict:
     )
 
     policy_config = config_dict.create(
-        num_timesteps=3_000_000_000,
-        max_devices_per_host=8,
+        # ====== Used in dagger training function ======
+        num_envs = 4096,                        # 4096
+        num_training_steps = 400_000,         # 400_000
+        debug = False,
+        verbose = False,
+        save_freq = 500,
+        log_freq = 100,
+        lr = 1e-4,
+        lr_scheduler = "constant",
+        weight_decay = 1e-2,
+        max_grad_norm = 1.0,
+        use_test_set = False,
+        save_dir = "",
         wrap_env=True,
         # environment wrapper
-        num_envs=32768,  # 8192(256*32), 16384(512*32), 32768(1024*32)
         episode_length=EPISODE_LENGTH,
         action_repeat=1,
         wrap_env_fn=None,
         randomization_fn=domain_randomize,
-        # ppo params
-        learning_rate=3e-4,
-        entropy_cost=0.01,
-        discounting=0.97,
-        unroll_length=20,
-        batch_size=1024,  # 256, 512, 1024
-        num_minibatches=32,  # 8, 16, 32
-        num_updates_per_batch=4,
-        num_resets_per_eval=0,
-        normalize_observations=False,
-        reward_scaling=1.0,
-        clipping_epsilon=0.2,
-        gae_lambda=0.95,
-        max_grad_norm=1.0,
-        normalize_advantage=True,
-        network_factory=config_dict.create(
-            policy_hidden_layer_sizes=(512, 512, 256, 256, 128),
-            value_hidden_layer_sizes=(512, 512, 256, 256, 128),
-            policy_obs_key="state",
-            value_obs_key="privileged_state",
-        ),
-        seed=0,
-        # eval
-        num_evals=0,
-        # training metrics
-        log_training_metrics=True,
-        training_metrics_steps=int(1e6),  # 1M
-        # callbacks
-        progress_fn=lambda *args: None,
-        # checkpointing
-        save_checkpoint_path=None,
-        restore_checkpoint_path=None,
-        restore_params=None,
-        restore_value_fn=True,
+        
+        policy_args=None,
     )
 
     config = config_dict.create(
@@ -228,7 +188,7 @@ def g1_tracking_general_dr_task_config() -> config_dict.ConfigDict:
     return config
 
 
-tmj.registry.register("G1TrackingGeneralDR", "tracking_config")(g1_tracking_general_dr_task_config())
+tmj.registry.register("G1TrackingGeneralDR", "tracking_dagger_config")(g1_tracking_general_dr_task_config())
 
 
 def torque_step_dr(
@@ -272,7 +232,7 @@ def torque_step_dr(
     return final_rng, final_data, final_torque
 
 
-@tmj.registry.register("G1TrackingGeneralDR", "tracking_train_env_class")
+@tmj.registry.register("G1TrackingGeneralDR", "tracking_dagger_train_env_class")
 class G1TrackingGeneralDREnv(g1_env_tracking_general.G1TrackingGeneralEnv):
 
     def reset(self, rng: jax.Array, trajectory_data: TrajectoryData = None) -> mjx_env.State:
@@ -280,6 +240,7 @@ class G1TrackingGeneralDREnv(g1_env_tracking_general.G1TrackingGeneralEnv):
         if trajectory_data is None:
             trajectory_data = self.th.traj.data
         rng, _noise_rng = jax.random.split(rng, 2)
+
         carry = self.th.reset_state_with_trajectory(trajectory_data, TrajCarry(rng, self.th.init_state()))
         init_traj_data = self.th.get_current_traj_data_with_trajectory(trajectory_data, carry)  # get traj state
 
@@ -387,12 +348,8 @@ class G1TrackingGeneralDREnv(g1_env_tracking_general.G1TrackingGeneralEnv):
         data = state.data.replace(qvel=qvel)
         state = state.replace(data=data)
 
-        # set motor target
-        # action is defined as the deviation from reference motion
         traj_data = self.th.get_current_traj_data_with_trajectory(trajectory_data, state.info["traj_info"])
-        lower_motor_targets = traj_data.qpos[7:][self.action_joint_ids] + action * self._config.action_scale
-        motor_targets = self._default_qpos.copy()
-        motor_targets = motor_targets.at[self.action_joint_ids].set(lower_motor_targets)
+        motor_targets = self._get_motor_targets(state, action, use_residual_action=self._config.student_use_residual_action, trajectory_data=trajectory_data)
 
         state.info["rng"], data, torque = torque_step_dr(
             state.info["rng"],
