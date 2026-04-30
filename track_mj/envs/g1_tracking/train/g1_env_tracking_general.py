@@ -49,8 +49,7 @@ def g1_tracking_general_task_config() -> config_dict.ConfigDict:
         soft_joint_pos_limit_factor=0.95,
         reference_traj_config=config_dict.create(
             name={
-                # "lafan1": consts.LAFAN1_SPECIALIST_DATASETS_1
-                "test": consts.TEST
+                "lafan1": consts.LAFAN1_SPECIALIST_DATASETS_1
             },
             
             random_start=True,
@@ -683,17 +682,25 @@ class G1TrackingGeneralEnv(g1_base.G1Env):
     def extend_motion(self, traj: Trajectory, smooth_start_end: bool = True) -> Trajectory:
         assert traj.data.n_trajectories == 1
 
-        if smooth_start_end:
-            start_end_transition_smoother = SmoothStartEndTransition(model=self._mj_model, traj=traj)
-            traj = start_end_transition_smoother.run_interp(return_backend=jp)  # use default params
-        
         traj_data, traj_info = interpolate_trajectories(traj.data, traj.info, 1.0 / self.dt)
         traj = Trajectory(info=traj_info, data=traj_data)
 
         self.th = TrajectoryHandler(
             model=self._mj_model, warn=True, traj=traj, control_dt=self.dt, random_start=False, fixed_start_conf=(0, 0)
         )
-        
+
+        traj = self.th.traj
+
+        # Move start/end smoothing to the penultimate preprocessing step.
+        if smooth_start_end:
+            start_end_transition_smoother = SmoothStartEndTransition(model=self._mj_model, traj=traj)
+            traj = start_end_transition_smoother.run_interp(return_backend=jp)  # use default params
+
+            # Rebuild trajectory handler because smoothing changes trajectory content/length.
+            self.th = TrajectoryHandler(
+                model=self._mj_model, warn=True, traj=traj, control_dt=self.dt, random_start=False, fixed_start_conf=(0, 0)
+            )
+
         traj_data, traj_info = self.th.traj.data, self.th.traj.info
 
         callback = ExtendTrajData(self, model=self._mj_model, n_samples=traj_data.n_samples)

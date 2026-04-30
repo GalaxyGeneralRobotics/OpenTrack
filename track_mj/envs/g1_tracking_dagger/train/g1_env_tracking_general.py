@@ -27,7 +27,7 @@ from track_mj.utils.dataset.traj_class import (
 )
 from track_mj.utils.dataset.traj_handler import TrajectoryHandler, TrajCarry
 from track_mj.utils.mujoco import mj_jntname2qposid, mj_jntid2qposid
-from track_mj.utils.dataset.traj_process import ExtendTrajData
+from track_mj.utils.dataset.traj_process import ExtendTrajData, SmoothStartEndTransition
 from track_mj.utils import math as gmth
 
 ENABLE_PUSH = True
@@ -602,7 +602,7 @@ class G1TrackingGeneralEnv(g1_base.G1Env):
 
         return trajectory.data
 
-    def preprocess_trajectory(self, dataset_dict: Dict[str, List[str]], batch_idx: int, num_batches: int) -> Trajectory:
+    def preprocess_trajectory(self, dataset_dict: Dict[str, List[str]], batch_idx: int, num_batches: int, smooth_start_end: bool = True) -> Trajectory:
         all_trajectories = []
         num_trajectory = sum(len(traj_names) for traj_names in dataset_dict.values())
 
@@ -637,14 +637,14 @@ class G1TrackingGeneralEnv(g1_base.G1Env):
 
                 if current_idx >= start_idx:
                     # load the npz file
-                    traj_path = os.path.join(dataset_dir, f"{t_name}.npz")
+                    traj_path = os.path.join(dataset_dir, "UnitreeG1", f"{t_name}.npz")
 
                     if os.path.exists(traj_path):
                         traj = Trajectory.load(traj_path, backend=jp)
 
                         if not traj.data.is_complete:
                             print(f"Trajectory {t_name} is not complete. Extending...")
-                            traj = self.extend_motion(traj)
+                            traj = self.extend_motion(traj, smooth_start_end=smooth_start_end)
                             traj.save(traj_path)  # save trajectory before recalculating velocity
                         print(f"Loaded trajectory {t_name}")
 
@@ -667,7 +667,7 @@ class G1TrackingGeneralEnv(g1_base.G1Env):
 
         return None
 
-    def extend_motion(self, traj: Trajectory) -> Trajectory:
+    def extend_motion(self, traj: Trajectory, smooth_start_end: bool = True) -> Trajectory:
         assert traj.data.n_trajectories == 1
         
         traj_data, traj_info = interpolate_trajectories(traj.data, traj.info, 1.0 / self.dt)
@@ -676,7 +676,19 @@ class G1TrackingGeneralEnv(g1_base.G1Env):
         self.th = TrajectoryHandler(
             model=self._mj_model, warn=True, traj=traj, control_dt=self.dt, random_start=False, fixed_start_conf=(0, 0)
         )
-        
+
+        traj = self.th.traj
+
+        # Move start/end smoothing to the penultimate preprocessing step.
+        if smooth_start_end:
+            start_end_transition_smoother = SmoothStartEndTransition(model=self._mj_model, traj=traj)
+            traj = start_end_transition_smoother.run_interp(return_backend=jp)  # use default params
+
+            # Rebuild trajectory handler because smoothing changes trajectory content/length.
+            self.th = TrajectoryHandler(
+                model=self._mj_model, warn=True, traj=traj, control_dt=self.dt, random_start=False, fixed_start_conf=(0, 0)
+            )
+
         traj_data, traj_info = self.th.traj.data, self.th.traj.info
 
         callback = ExtendTrajData(self, model=self._mj_model, n_samples=traj_data.n_samples)
