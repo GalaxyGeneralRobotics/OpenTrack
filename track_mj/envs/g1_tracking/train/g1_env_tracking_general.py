@@ -572,7 +572,7 @@ class G1TrackingGeneralEnv(g1_base.G1Env):
         th_params = self._th_params if self._th_params is not None else {}
         return TrajectoryHandler(model=self._mj_model, warn=warn, traj=traj, control_dt=self.dt, **th_params)
 
-    def prepare_trajectory(self, dataset_dict: Dict[str, List[str]], smooth_start_end: bool = True) -> Trajectory:
+    def prepare_trajectory(self, dataset_dict: Dict[str, List[str]]) -> Trajectory:
         all_trajectories = []
         for dataset_name, traj_names in dataset_dict.items():
             print(f"Loading dataset: {dataset_name} with {len(traj_names)} trajectories.")
@@ -586,7 +586,7 @@ class G1TrackingGeneralEnv(g1_base.G1Env):
                     traj = Trajectory.load(traj_path, backend=jp)
                     if not traj.data.is_complete:
                         print(f"Trajectory {t_name} is not complete. Extending...")
-                        traj = self.extend_motion(traj, smooth_start_end)
+                        traj = self.extend_motion(traj, smooth_start_end=False)
                         traj.save(traj_path)  # save trajectory before recalculating velocity
                     print(f"Loaded trajectory {t_name}")
 
