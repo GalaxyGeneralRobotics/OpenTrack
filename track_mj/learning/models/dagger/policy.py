@@ -57,7 +57,7 @@ def get_policy(args: PolicyArgs):
 class MLP_Policy_ONNX:
     def __init__(self, config: ONNXPolicyArgs):
         self.policy_obs_key = config.policy_obs_key
-        self.onnx_path = os.path.join(config.onnx_dir, "model.onnx")
+        self.onnx_path = config.onnx_dir
         self.onnx_model = rt.InferenceSession(self.onnx_path, providers=["CPUExecutionProvider"])
         print(f"Loaded ONNX model from {self.onnx_path}")
 

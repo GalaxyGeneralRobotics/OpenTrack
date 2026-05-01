@@ -181,7 +181,7 @@ As of **November 30, 2025**, we have open-sourced **a generalist model on LAFAN1
    python -m track_mj.eval.dagger.torch2onnx --ckpt_dir "storage/logs/dagger/<your_exp_name>" 
    # This writes ONNX to storage/logs/dagger/<your_exp_name>/checkpoints/model.onnx
    # Next, run the evaluation script
-   python -m track_mj.eval.dagger.mj_onnx_video --task G1TrackingGeneral --exp_name <your_exp_name>
+   python -m track_mj.eval.dagger.mj_onnx_video --task G1TrackingGeneral --exp_name <your_exp_name> [--use_viewer] [--use_renderer] [--play_ref_motion]
   ```
 
 # Acknowledgement
